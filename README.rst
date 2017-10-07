@@ -1,12 +1,10 @@
-ESP-IDF template app
+esp32-lcdtest
 ====================
 
-This is a template application to be used with `Espressif IoT Development Framework`_ (ESP-IDF). 
-
-Please check ESP-IDF docs for getting started instructions.
-
-Code in this repository is Copyright (C) 2016 Espressif Systems, licensed under the Apache License 2.0 as described in the file LICENSE.
-
-.. _Espressif IoT Development Framework: https://github.com/espressif/esp-idf
-
-
+Press the button on GPIO0 to advance the test pattern.  There are six (6) test patterns:
+1) Gradient
+2) Solid red
+3) Solid green
+4) Solid blue
+5) Solid white
+6) Image
