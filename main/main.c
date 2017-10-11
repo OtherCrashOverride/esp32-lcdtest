@@ -10,6 +10,7 @@
 #include "driver/ledc.h"
 
 #include <string.h>
+#include <math.h>
 
 #include "lena_std_320_240.h"
 
@@ -37,17 +38,19 @@ static spi_device_handle_t spi;
 
 uint16_t FrameBuffer[320 * 240];
 
-
 /*
  The ILI9341 needs a bunch of command/argument values to be initialized. They are stored in this struct.
 */
 typedef struct {
     uint8_t cmd;
-    uint8_t data[16];
+    uint8_t data[128];
     uint8_t databytes; //No of data in data; bit 7 = delay after set; 0xFF = end of cmds.
 } ili_init_cmd_t;
 
 #define TFT_CMD_SWRESET	0x01
+
+ili_init_cmd_t color_lut;
+
 // Note: New Gamma curve from https://github.com/gnulabis/UTFT-ESP8266/blob/master/UTFT/tft_drivers/ili9341/16/initlcd.h
 DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
     {TFT_CMD_SWRESET, {0}, 0x80},
@@ -63,7 +66,13 @@ DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
     {0xC7, {0xBE}, 1},
     //{0x36, {0x28}, 1},  // MADCTL (Memory Access Control)
     {0x36, {(MADCTL_MV | TFT_RGB_BGR)}, 1},
-    {0x3A, {0x55}, 1},
+
+#if 1
+    {0x3A, {0x55}, 1},  // 16bit color
+#else
+    {0x3A, {0x66}, 1},  // 18bit color
+#endif
+
     {0xB1, {0x00, 0x1F}, 2},  // Frame Rate Control (1B=70, 1F=61, 10=119)
     {0xF2, {0x08}, 1},
     {0x26, {0x01}, 1},
@@ -87,7 +96,6 @@ DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
     {0xB6, {0x0A, 0x82, 0x27, 0x00}, 4},
     {0x11, {0}, 0x80},
     {0x29, {0}, 0x80},
-    {0x53, {0b00000000}, 1},
 
     {0, {0}, 0xff},
 };
@@ -149,6 +157,9 @@ static void ili_init()
         }
         cmd++;
     }
+
+    ili_cmd(spi, color_lut.cmd);
+    ili_data(spi, color_lut.data, 128);
 
     //gpio_set_level(LCD_PIN_NUM_BCKL, LCD_BACKLIGHT_ON_VALUE);
 }
@@ -382,6 +393,134 @@ void generate_solid_color(uint8_t red, uint8_t green, uint8_t blue)
   }
 }
 
+static void HSVToRGB(double H, double S, double V, double* R, double* G, double* B)
+{
+    if (H == 1.0)
+    {
+        H = 0.0;
+    }
+
+    double step = 1.0 / 6.0;
+    double vh = H / step;
+
+    int i = (int)floor(vh);
+
+    double f = vh - i;
+    double p = V * (1.0 - S);
+    double q = V * (1.0 - (S * f));
+    double t = V * (1.0 - (S * (1.0 - f)));
+
+    switch (i)
+    {
+        case 0:
+            {
+                *R = V;
+                *G = t;
+                *B = p;
+                break;
+            }
+        case 1:
+            {
+                *R = q;
+                *G = V;
+                *B = p;
+                break;
+            }
+        case 2:
+            {
+                *R = p;
+                *G = V;
+                *B = t;
+                break;
+            }
+        case 3:
+            {
+                *R = p;
+                *G = q;
+                *B = V;
+                break;
+            }
+        case 4:
+            {
+                *R = t;
+                *G = p;
+                *B = V;
+                break;
+            }
+        case 5:
+            {
+                *R = V;
+                *G = p;
+                *B = q;
+                break;
+            }
+        default:
+            {
+                // not possible - if we get here it is an internal error
+            }
+    }
+}
+
+typedef struct
+{
+  int X;
+  int Y;
+} Point;
+
+// Based on http://viziblr.com/news/2011/12/1/drawing-a-color-hue-wheel-with-c.html
+void generate_color_wheel()
+{
+  int inner_radius = 40;
+  int outer_radius = 120;
+
+  int bmp_width = 320;
+  int bmp_height = 240;
+
+  Point center;
+  center.X = bmp_width / 2;
+  center.Y = bmp_height / 2;
+
+  // Clear screen to black
+  for (int i = 0; i < 240 * 320; ++i)
+    FrameBuffer[i] = 0x0000;
+
+  // Render
+  for (int y = 0; y < bmp_height; y++)
+  {
+      int dy = (center.Y - y);
+
+      for (int x = 0; x < bmp_width; x++)
+      {
+          int dx = (center.X - x);
+
+          double dist = sqrt(dx * dx + dy * dy);
+
+          if (dist >= inner_radius && dist <= outer_radius)
+          {
+              double theta = atan2(dy, dx);
+              // theta can go from -pi to pi
+
+              double hue = (theta + M_PI) / (2 * M_PI);
+              //double hue = (theta + M_PI) * 57.2958;
+
+              double dr, dg, db;
+              const double sat = 1.0;
+              const double val = 1.0;
+              HSVToRGB(hue, sat, val, &dr, &dg, &db);
+
+              uint16_t c = ((int)(dr * 255) >> 3) << 11;
+              c |= ((int)(dg * 255) >> 2) << 5;
+              c |= ((int)(db * 255) >> 3);
+
+              // byte swap
+              c = (c >> 8) | ((c << 8) & 0xff00);
+
+              FrameBuffer[y * 320 + x] = c;
+          }
+      }
+  }
+}
+
 void generate_image()
 {
   uint8_t* ptr = gimp_image.pixel_data;
@@ -404,12 +543,47 @@ void generate_image()
 
 void app_main(void)
 {
+  const bool colorCorrect = true;
+
+  color_lut.cmd = 0x2d;
+  for (int i = 0; i < 32; ++i)
+  {
+    color_lut.data[i] = (i << 1) | 1;
+  }
+
+  for (int i = 0; i < 64; ++i)
+  {
+    if (colorCorrect)
+    {
+      int val = i - 10;
+      color_lut.data[i + 32] = val < 0 ? 0 : val;
+    }
+    else
+    {
+      color_lut.data[i + 32] = i;
+    }
+  }
+
+  for (int i = 0; i < 32; ++i)
+  {
+    if (colorCorrect)
+    {
+      int val = i - 5;
+      color_lut.data[i + 32 + 64] = (val < 0 ? 0 : val) << 1;
+    }
+    else
+    {
+      color_lut.data[i + 32 + 64] = (i << 1) | 1;
+    }
+  }
+
     nvs_flash_init();
     ili9341_init();
 
     gpio_set_direction(0, GPIO_MODE_INPUT);
 
-    generate_gradient();
+    //generate_gradient();
+    generate_color_wheel();
 
     int test = 0;
     int lastButtonState = gpio_get_level(0);
@@ -423,29 +597,33 @@ void app_main(void)
         {
           ++test;
 
-          switch (test % 6)
+          switch (test % 7)
           {
             case 0:
-              generate_gradient();
+              generate_color_wheel();
               break;
 
             case 1:
-              generate_solid_color(0xff, 0x00, 0x00);
+              generate_gradient();
               break;
 
             case 2:
-              generate_solid_color(0x00, 0xff, 0x00);
+              generate_solid_color(0xff, 0x00, 0x00);
               break;
 
             case 3:
-              generate_solid_color(0x00, 0x00, 0xff);
+              generate_solid_color(0x00, 0xff, 0x00);
               break;
 
             case 4:
-              generate_solid_color(0xff, 0xff, 0xff);
+              generate_solid_color(0x00, 0x00, 0xff);
               break;
 
             case 5:
+              generate_solid_color(0xff, 0xff, 0xff);
+              break;
+
+            case 6:
               generate_image();
               break;
           }
