@@ -393,22 +393,22 @@ void generate_solid_color(uint8_t red, uint8_t green, uint8_t blue)
   }
 }
 
-static void HSVToRGB(double H, double S, double V, double* R, double* G, double* B)
+static void HSVToRGB(float H, float S, float V, float* R, float* G, float* B)
 {
-    if (H == 1.0)
+    if (H == 1.0f)
     {
-        H = 0.0;
+        H = 0.0f;
     }
 
-    double step = 1.0 / 6.0;
-    double vh = H / step;
+    float step = 1.0f / 6.0f;
+    float vh = H / step;
 
-    int i = (int)floor(vh);
+    int i = (int)floorf(vh);
 
-    double f = vh - i;
-    double p = V * (1.0 - S);
-    double q = V * (1.0 - (S * f));
-    double t = V * (1.0 - (S * (1.0 - f)));
+    float f = vh - i;
+    float p = V * (1.0f - S);
+    float q = V * (1.0f - (S * f));
+    float t = V * (1.0f - (S * (1.0f - f)));
 
     switch (i)
     {
@@ -493,19 +493,18 @@ void generate_color_wheel()
       {
           int dx = (center.X - x);
 
-          double dist = sqrt(dx * dx + dy * dy);
+          float dist = sqrtf(dx * dx + dy * dy);
 
           if (dist >= inner_radius && dist <= outer_radius)
           {
-              double theta = atan2(dy, dx);
+              float theta = atan2f(dy, dx);
               // theta can go from -pi to pi
 
-              double hue = (theta + M_PI) / (2 * M_PI);
-              //double hue = (theta + M_PI) * 57.2958;
+              float hue = (theta + M_PI) / (2 * M_PI);
 
-              double dr, dg, db;
-              const double sat = 1.0;
-              const double val = 1.0;
+              float dr, dg, db;
+              const float sat = 1.0;
+              const float val = 1.0;
               HSVToRGB(hue, sat, val, &dr, &dg, &db);
 
               uint16_t c = ((int)(dr * 255) >> 3) << 11;
