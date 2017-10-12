@@ -63,7 +63,7 @@ ili_init_cmd_t color_lut;
 
 DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
   {TFT_CMD_SWRESET, {0}, 0x80},
-  
+
 //************* Start Initial Sequence **********//
 // LCD_ILI9341_CMD(0xCF);
 // LCD_ILI9341_ Parameter (0x00);
@@ -309,7 +309,7 @@ static void ili_init()
         cmd++;
     }
 
-#if 0
+#if 1
     ili_cmd(spi, color_lut.cmd);
     ili_data(spi, color_lut.data, 128);
 #endif
@@ -694,7 +694,7 @@ void generate_image()
 
 void app_main(void)
 {
-  #if 0
+  #if 1
   const bool colorCorrect = true;
 
   color_lut.cmd = 0x2d;
@@ -707,7 +707,7 @@ void app_main(void)
   {
     if (colorCorrect)
     {
-      int val = i - 10;
+      int val = i * (58.0 / 64.0);
       color_lut.data[i + 32] = val < 0 ? 0 : val;
     }
     else
@@ -720,13 +720,23 @@ void app_main(void)
   {
     if (colorCorrect)
     {
-      int val = i - 5;
+      int val = i * (29.0 / 32.0);
       color_lut.data[i + 32 + 64] = (val < 0 ? 0 : val) << 1;
     }
     else
     {
       color_lut.data[i + 32 + 64] = (i << 1) | 1;
     }
+  }
+
+  printf("LUT: ");
+  for (int i = 0; i < 128; ++i)
+  {
+    printf("0x%.2x", color_lut.data[i]);
+    if (i != 127)
+      printf(", ");
+    else
+      printf("\n");
   }
   #endif
 
