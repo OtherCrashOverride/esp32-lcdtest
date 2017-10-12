@@ -51,6 +51,148 @@ typedef struct {
 
 ili_init_cmd_t color_lut;
 
+#if 1
+// VCI=2.8V
+//************* Reset LCD Driver ****************//
+// LCD_nRESET = 1;
+// delayms(1);       // Delay 1ms
+// LCD_nRESET = 0;
+// delayms(10);       // Delay 10ms // This delay time is necessary
+// LCD_nRESET = 1;
+// delayms(120);       // Delay 120 ms
+
+DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
+//************* Start Initial Sequence **********//
+// LCD_ILI9341_CMD(0xCF);
+// LCD_ILI9341_ Parameter (0x00);
+// LCD_ILI9341_ Parameter (0xc3);
+// LCD_ILI9341_ Parameter (0X30);
+  {0xCF, {0x00, 0xc3, 0x30}, 3},
+
+// LCD_ILI9341_CMD(0xED);
+// LCD_ILI9341_ Parameter (0x64);
+// LCD_ILI9341_ Parameter (0x03);
+// LCD_ILI9341_ Parameter (0X12);
+// LCD_ILI9341_ Parameter (0X81);
+  {0xED, {0x64, 0x03, 0x12, 0x81}, 4},
+
+// LCD_ILI9341_CMD(0xE8);
+// LCD_ILI9341_ Parameter (0x85);
+// LCD_ILI9341_ Parameter (0x00);
+// LCD_ILI9341_ Parameter (0x78);
+  {0xE8, {0x85, 0x00, 0x78}, 3},
+
+// LCD_ILI9341_CMD(0xCB);
+// LCD_ILI9341_ Parameter (0x39);
+// LCD_ILI9341_ Parameter (0x2C);
+// LCD_ILI9341_ Parameter (0x00);
+// LCD_ILI9341_ Parameter (0x34);
+// LCD_ILI9341_ Parameter (0x02);
+  {0xCB, {0x39, 0x2c, 0x00, 0x34, 0x02}, 5},
+
+// LCD_ILI9341_CMD(0xF7);
+// LCD_ILI9341_ Parameter (0x20);
+  {0xF7, {0x20}, 1},
+
+// LCD_ILI9341_CMD(0xEA);
+// LCD_ILI9341_ Parameter (0x00);
+// LCD_ILI9341_ Parameter (0x00);
+  {0xEA, {0x00, 0x00}, 2},
+
+// LCD_ILI9341_CMD(0xC0);    //Power control
+// LCD_ILI9341_ Parameter (0x1B);   //VRH[5:0]
+  {0xC0, {0x1B}, 1},
+
+// LCD_ILI9341_CMD(0xC1);    //Power control
+// LCD_ILI9341_ Parameter (0x12);   //SAP[2:0];BT[3:0]
+  {0xC1, {0x12}, 1},
+
+// LCD_ILI9341_CMD(0xC5);    //VCM control
+// LCD_ILI9341_ Parameter (0x32);
+// LCD_ILI9341_ Parameter (0x3C);
+  {0xC5, {0x32, 0x3C}, 2},
+
+// LCD_ILI9341_CMD(0xC7);    //VCM control2
+// LCD_ILI9341_ Parameter (0X91);
+  {0xC7, {0x91}, 1},
+
+// LCD_ILI9341_CMD(0x36);    // Memory Access Control
+// LCD_ILI9341_ Parameter (0x08);
+  //{0x36, {0x08}, 1},
+  {0x36, {(MADCTL_MV | MADCTL_MX | TFT_RGB_BGR)}, 1},
+
+// LCD_ILI9341_CMD(0x3A);
+// LCD_ILI9341_ Parameter (0x55);
+  {0x3A, {0x55}, 1},
+
+// LCD_ILI9341_CMD(0xB1);
+// LCD_ILI9341_ Parameter (0x00);
+// LCD_ILI9341_ Parameter (0x1B);
+  {0xB1, {0x00, 0x1B}, 2},
+
+// LCD_ILI9341_CMD(0xB6);    // Display Function Control
+// LCD_ILI9341_ Parameter (0x0A);
+// LCD_ILI9341_ Parameter (0xA2);
+  {0xB6, {0x0A, 0xA2}, 2},
+
+// LCD_ILI9341_CMD(0xF6);
+// LCD_ILI9341_ Parameter (0x01);
+// LCD_ILI9341_ Parameter (0x30);
+  {0xF6, {0x01, 0x30}, 2},
+
+// LCD_ILI9341_CMD(0xF2);    // 3Gamma Function Disable
+// LCD_ILI9341_ Parameter (0x00);
+  {0xF2, {0x00}, 1},
+
+// LCD_ILI9341_CMD(0x26);    //Gamma curve selected
+// LCD_ILI9341_ Parameter (0x01);
+  {0x26, {0x01}, 1},
+
+// LCD_ILI9341_CMD(0xE0);    //Set Gamma
+// LCD_ILI9341_ Parameter (0x0F);
+// LCD_ILI9341_ Parameter (0x1d);
+// LCD_ILI9341_ Parameter (0x1a);
+// LCD_ILI9341_ Parameter (0x0a);
+// LCD_ILI9341_ Parameter (0x0d);
+// LCD_ILI9341_ Parameter (0x07);
+// LCD_ILI9341_ Parameter (0x49);
+// LCD_ILI9341_ Parameter (0X66);
+// LCD_ILI9341_ Parameter (0x3b);
+// LCD_ILI9341_ Parameter (0x07);
+// LCD_ILI9341_ Parameter (0x11);
+// LCD_ILI9341_ Parameter (0x01);
+// LCD_ILI9341_ Parameter (0x09);
+// LCD_ILI9341_ Parameter (0x05);
+// LCD_ILI9341_ Parameter (0x04);
+  {0xE0, {0x0f, 0x1d, 0x1a, 0x0a, 0x0d, 0x07, 0x49, 0x66, 0x3b, 0x07, 0x11, 0x01, 0x09, 0x05, 0x04}, 15},
+
+// LCD_ILI9341_CMD(0XE1);    //Set Gamma
+// LCD_ILI9341_ Parameter (0x00);
+// LCD_ILI9341_ Parameter (0x18);
+// LCD_ILI9341_ Parameter (0x1d);
+// LCD_ILI9341_ Parameter (0x02);
+// LCD_ILI9341_ Parameter (0x0f);
+// LCD_ILI9341_ Parameter (0x04);
+// LCD_ILI9341_ Parameter (0x36);
+// LCD_ILI9341_ Parameter (0x13);
+// LCD_ILI9341_ Parameter (0x4c);
+// LCD_ILI9341_ Parameter (0x07);
+// LCD_ILI9341_ Parameter (0x13);
+// LCD_ILI9341_ Parameter (0x0f);
+// LCD_ILI9341_ Parameter (0x2E);
+// LCD_ILI9341_ Parameter (0x2f);
+// LCD_ILI9341_ Parameter (0x05);
+  {0xE1, {0x00, 0x18, 0x1d, 0x02, 0x0f, 0x04, 0x36, 0x13, 0x4c, 0x07, 0x13, 0x0f, 0x2e, 0x2f, 0x05}, 15},
+
+//LCD_ILI9341_CMD(0x11);    //Exit Sleep
+//Delayms(120);
+  {0x11, {0}, 0x80},
+
+//LCD_ILI9341_CMD(0x29);    //Display on
+  {0x29, {0}, 0x80}
+};
+
+#else
 // Note: New Gamma curve from https://github.com/gnulabis/UTFT-ESP8266/blob/master/UTFT/tft_drivers/ili9341/16/initlcd.h
 DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
     {TFT_CMD_SWRESET, {0}, 0x80},
@@ -99,7 +241,7 @@ DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
 
     {0, {0}, 0xff},
 };
-
+#endif
 
 
 //Send a command to the ILI9341. Uses spi_device_transmit, which waits until the transfer is complete.
@@ -158,9 +300,10 @@ static void ili_init()
         cmd++;
     }
 
+#if 0
     ili_cmd(spi, color_lut.cmd);
     ili_data(spi, color_lut.data, 128);
-
+#endif
     //gpio_set_level(LCD_PIN_NUM_BCKL, LCD_BACKLIGHT_ON_VALUE);
 }
 
@@ -542,6 +685,7 @@ void generate_image()
 
 void app_main(void)
 {
+  #if 0
   const bool colorCorrect = true;
 
   color_lut.cmd = 0x2d;
@@ -575,6 +719,7 @@ void app_main(void)
       color_lut.data[i + 32 + 64] = (i << 1) | 1;
     }
   }
+  #endif
 
     nvs_flash_init();
     ili9341_init();
