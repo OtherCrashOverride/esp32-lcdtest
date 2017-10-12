@@ -62,6 +62,8 @@ ili_init_cmd_t color_lut;
 // delayms(120);       // Delay 120 ms
 
 DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
+  {TFT_CMD_SWRESET, {0}, 0x80},
+  
 //************* Start Initial Sequence **********//
 // LCD_ILI9341_CMD(0xCF);
 // LCD_ILI9341_ Parameter (0x00);
@@ -194,7 +196,9 @@ DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
   {0x11, {0}, 0x80},
 
 //LCD_ILI9341_CMD(0x29);    //Display on
-  {0x29, {0}, 0x80}
+  {0x29, {0}, 0x80},
+
+  {0, {0}, 0xff}
 };
 
 #else
